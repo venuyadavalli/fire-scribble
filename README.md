@@ -1,73 +1,128 @@
-# Welcome to your Lovable project
+# Microblog Frontend
 
-## Project info
+A modern React-based microblogging platform built with TypeScript, Firebase Authentication, and Spring Boot backend integration.
 
-**URL**: https://lovable.dev/projects/8c553ae8-d5a5-4aba-992c-89377c1288a0
+## Features
 
-## How can I edit this code?
+- 🔐 Firebase Authentication (Email/Password, Password Reset)
+- 📝 Create, read, and delete posts (280 character limit)
+- ❤️ Like/unlike posts
+- 👥 Follow/unfollow users
+- 🔍 Search users
+- 📱 Responsive design
+- ⚡ Real-time updates via Server-Sent Events (SSE)
+- 🎨 Modern UI with Tailwind CSS and shadcn/ui
 
-There are several ways of editing your application.
+## Setup Instructions
 
-**Use Lovable**
+### 1. Firebase Configuration
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8c553ae8-d5a5-4aba-992c-89377c1288a0) and start prompting.
+Replace the placeholder values in `src/lib/firebase.ts` with your Firebase project credentials:
 
-Changes made via Lovable will be committed automatically to this repo.
+```typescript
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+```
 
-**Use your preferred IDE**
+**To get these values:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or select existing one
+3. Go to Project Settings > General
+4. Scroll to "Your apps" section
+5. Click "Add app" and select Web (</>) icon
+6. Copy the configuration values
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 2. Backend Setup
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Make sure your Spring Boot backend is running on `http://localhost:8081`
 
-Follow these steps:
+The backend should have the following endpoints configured:
+- Authentication: `/auth/*`
+- Users: `/users/*`
+- Posts: `/posts/*`
+- Feed: `/feed/*`
+- Follows: `/follows/*`, `/followers/*`, `/followees/*`
+- Likes: `/likes/*`
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Install Dependencies
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 4. Run Development Server
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project Structure
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/         # Reusable UI components
+│   ├── ui/            # shadcn/ui components
+│   ├── Layout.tsx     # Main layout with navigation
+│   ├── PostCard.tsx   # Post display component
+│   └── ProtectedRoute.tsx
+├── contexts/          # React contexts
+│   └── AuthContext.tsx
+├── lib/              # Utility functions
+│   ├── api.ts        # API client functions
+│   ├── firebase.ts   # Firebase configuration
+│   └── utils.ts
+├── pages/            # Page components
+│   ├── Register.tsx
+│   ├── Login.tsx
+│   ├── ForgotPassword.tsx
+│   ├── Feed.tsx
+│   ├── NewPost.tsx
+│   ├── Profile.tsx
+│   ├── Search.tsx
+│   └── Notifications.tsx
+└── index.css         # Global styles and design tokens
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Key Technologies
 
-## What technologies are used for this project?
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Firebase Auth** - Authentication
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI components
+- **React Router** - Routing
+- **Sonner** - Toast notifications
 
-This project is built with:
+## API Integration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+All API calls are made through the `src/lib/api.ts` module, which handles:
+- Authentication headers (Firebase JWT tokens)
+- Error handling
+- Request/response formatting
 
-## How can I deploy this project?
+## Design System
 
-Simply open [Lovable](https://lovable.dev/projects/8c553ae8-d5a5-4aba-992c-89377c1288a0) and click on Share -> Publish.
+The app uses a semantic token-based design system defined in `src/index.css`:
+- Primary color: Cyan/Blue (#0ea5e9)
+- Gradients for accents
+- Smooth transitions
+- Responsive breakpoints
 
-## Can I connect a custom domain to my Lovable project?
+All components use these tokens for consistent theming across light and dark modes.
 
-Yes, you can!
+## Development Notes
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Posts are limited to 280 characters
+- Real-time updates via SSE (to be fully implemented)
+- Protected routes redirect to login if not authenticated
+- Firebase handles all user authentication
+- Backend validates all requests with Firebase JWT tokens
