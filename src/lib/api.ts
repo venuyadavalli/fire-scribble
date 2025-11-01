@@ -35,7 +35,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
 // Auth API
 export const authAPI = {
-  register: (data: { username: string; email: string; userId: string }) =>
+  register: (data: { username: string; email: string; password: string }) =>
     fetchWithAuth('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -81,9 +81,9 @@ export const followsAPI = {
   unfollowUser: (userId: string) =>
     fetchWithAuth(`/follows/${userId}`, { method: 'DELETE' }),
   
-  getFollowers: (userId: string) => fetchWithAuth(`/followers/${userId}`),
+  getFollowers: (userId: string) => fetchWithAuth(`/follows/followers/${userId}`),
   
-  getFollowing: (userId: string) => fetchWithAuth(`/followees/${userId}`),
+  getFollowing: (userId: string) => fetchWithAuth(`/follows/followees/${userId}`),
 };
 
 // Likes API

@@ -24,7 +24,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likedCount);
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
     }
   };
 
-  const isOwner = user?.displayName === post.authorUsername || user?.email === post.authorUsername;
+  const isOwner = userInfo?.username === post.authorUsername;
 
   return (
     <Card className="transition-shadow hover:shadow-md">
@@ -104,7 +104,7 @@ export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
           size="sm"
           onClick={handleLikeToggle}
           disabled={loading}
-          className={liked ? 'text-red-500 hover:text-red-600' : ''}
+          className={liked ? 'text-destructive hover:text-destructive/90' : 'hover:text-primary'}
         >
           <Heart className={`mr-2 h-4 w-4 ${liked ? 'fill-current' : ''}`} />
           {likeCount}

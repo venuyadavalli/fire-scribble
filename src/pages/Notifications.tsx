@@ -1,20 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '@/components/Layout';
 import { Bell } from 'lucide-react';
+import { createSSEConnection } from '@/lib/api';
 
 interface Notification {
   id: string;
+  type: string;
   message: string;
   timestamp: string;
+  username?: string;
 }
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    // TODO: Connect to SSE endpoint for real-time notifications
-    // For now, showing placeholder
+    // Connect to SSE endpoint for real-time notifications
+    const connectSSE = async () => {
+      try {
+        const eventSource = await createSSEConnection('/sse/notifications', (data) => {
+          const newNotification: Notification = {
+            id: Date.now().toString(),
+            type: data.type,
+            message: getNotificationMessage(data),
+            timestamp: new Date().toISOString(),
+            username: data.username,
+          };
+          setNotifications((prev) => [newNotification, ...prev]);
+        });
+        eventSourceRef.current = eventSource;
+      } catch (error) {
+        console.error('Failed to connect to notifications SSE:', error);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
   }, []);
+
+  const getNotificationMessage = (data: any): string => {
+    switch (data.type) {
+      case 'LIKE':
+        return `${data.username} liked your post`;
+      case 'FOLLOW':
+        return `${data.username} started following you`;
+      case 'NEW_POST':
+        return `${data.username} created a new post`;
+      default:
+        return 'New notification';
+    }
+  };
 
   return (
     <Layout>

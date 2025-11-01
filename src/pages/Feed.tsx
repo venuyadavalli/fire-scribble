@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '@/components/Layout';
 import { PostCard } from '@/components/PostCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { feedAPI } from '@/lib/api';
+import { feedAPI, createSSEConnection } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface Post {
@@ -21,6 +21,8 @@ export default function Feed() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [newPostsCount, setNewPostsCount] = useState(0);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const loadPosts = async (pageNum: number, isInitial = false) => {
     if (loading) return;
@@ -50,7 +52,41 @@ export default function Feed() {
     setPosts([]);
     setPage(0);
     setHasMore(true);
+    setNewPostsCount(0);
     loadPosts(0, true);
+
+    // Connect to SSE for real-time updates
+    const connectSSE = async () => {
+      try {
+        const endpoint = activeTab === 'public' ? '/sse/feed/public' : '/sse/feed/following';
+        const eventSource = await createSSEConnection(endpoint, (data) => {
+          if (data.type === 'NEW_POST') {
+            setNewPostsCount((prev) => prev + 1);
+          } else if (data.type === 'DELETE_POST') {
+            setPosts((prev) => prev.filter((p) => p.id !== data.postId));
+          } else if (data.type === 'LIKE' || data.type === 'UNLIKE') {
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === data.postId
+                  ? { ...p, liked: data.type === 'LIKE', likedCount: data.likeCount }
+                  : p
+              )
+            );
+          }
+        });
+        eventSourceRef.current = eventSource;
+      } catch (error) {
+        console.error('Failed to connect to SSE:', error);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
   }, [activeTab]);
 
   const handleLoadMore = () => {
@@ -61,6 +97,14 @@ export default function Feed() {
 
   const handlePostDelete = (postId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
+  const handleLoadNewPosts = () => {
+    setNewPostsCount(0);
+    setPosts([]);
+    setPage(0);
+    setHasMore(true);
+    loadPosts(0, true);
   };
 
   return (
@@ -75,6 +119,14 @@ export default function Feed() {
             </TabsList>
           </Tabs>
         </div>
+
+        {newPostsCount > 0 && (
+          <div className="sticky top-[112px] z-10 flex justify-center p-4">
+            <Button onClick={handleLoadNewPosts} variant="default" className="shadow-lg">
+              {newPostsCount} new {newPostsCount === 1 ? 'post' : 'posts'}
+            </Button>
+          </div>
+        )}
 
         <div className="divide-y divide-border">
           {posts.length === 0 && !loading && (

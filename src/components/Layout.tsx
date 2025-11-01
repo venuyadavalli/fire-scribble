@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { icon: Home, label: 'Home', path: '/feed' },
     { icon: Search, label: 'Search', path: '/search' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
-    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: User, label: 'Profile', path: userInfo ? `/user/${userInfo.username}` : '/profile' },
     { icon: PenSquare, label: 'Post', path: '/post/new' },
   ];
 

@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { authAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,24 +21,26 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Create user in Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-
-      // Register user in backend
+      // Backend handles both Firebase and database user creation
       await authAPI.register({
-        userId: userCredential.user.uid,
         username: formData.username,
         email: formData.email,
+        password: formData.password,
       });
 
       toast.success('Account created successfully!');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create account');
+      const errorMessage = error.message || 'Failed to create account';
+      if (errorMessage.includes('already exists')) {
+        toast.error('Username or email already exists');
+      } else if (errorMessage.includes('email')) {
+        toast.error('Invalid email address');
+      } else if (errorMessage.includes('password')) {
+        toast.error('Password must be at least 6 characters');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

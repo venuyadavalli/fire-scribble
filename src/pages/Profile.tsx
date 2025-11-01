@@ -11,15 +11,15 @@ import { toast } from 'sonner';
 
 export default function Profile() {
   const { username } = useParams();
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const effectiveUsername = username || user?.displayName || user?.email?.split('@')[0] || '';
-  const isOwnProfile = !username || effectiveUsername === user?.displayName || effectiveUsername === user?.email?.split('@')[0];
+  const effectiveUsername = username || userInfo?.username || '';
+  const isOwnProfile = !username || effectiveUsername === userInfo?.username;
 
   useEffect(() => {
     loadProfile();
