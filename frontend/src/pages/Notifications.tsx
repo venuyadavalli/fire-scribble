@@ -1,40 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Bell } from 'lucide-react';
-import { createSSEConnection } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { createSSEConnection, notificationsAPI } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
   type: string;
-  message: string;
-  timestamp: string;
-  username?: string;
+  actorUsername: string;
+  actorId: string;
+  postId?: string;
+  createdAt: string;
+  isRead: boolean;
 }
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    // Connect to SSE endpoint for real-time notifications
-    const connectSSE = async () => {
-      try {
-        const eventSource = await createSSEConnection('/sse/notifications', (data) => {
-          const newNotification: Notification = {
-            id: Date.now().toString(),
-            type: data.type,
-            message: getNotificationMessage(data),
-            timestamp: new Date().toISOString(),
-            username: data.username,
-          };
-          setNotifications((prev) => [newNotification, ...prev]);
-        });
-        eventSourceRef.current = eventSource;
-      } catch (error) {
-        console.error('Failed to connect to notifications SSE:', error);
-      }
-    };
-
+    loadNotifications();
     connectSSE();
 
     return () => {
@@ -44,24 +32,85 @@ export default function Notifications() {
     };
   }, []);
 
-  const getNotificationMessage = (data: any): string => {
-    switch (data.type) {
+  const loadNotifications = async () => {
+    try {
+      const data = await notificationsAPI.getAll();
+      setNotifications(data);
+    } catch (error) {
+      toast.error('Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connectSSE = async () => {
+    try {
+      const eventSource = await createSSEConnection('/notifications/stream', (data) => {
+        setNotifications((prev) => [data, ...prev]);
+        toast.info(getNotificationMessage(data));
+      });
+      eventSourceRef.current = eventSource;
+    } catch (error) {
+      console.error('Failed to connect to notifications SSE:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsAPI.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      toast.error('Failed to mark notifications as read');
+    }
+  };
+
+  const getNotificationMessage = (notification: Notification): string => {
+    switch (notification.type) {
       case 'LIKE':
-        return `${data.username} liked your post`;
+        return `@${notification.actorUsername} liked your post`;
+      case 'UNLIKE':
+        return `@${notification.actorUsername} unliked your post`;
       case 'FOLLOW':
-        return `${data.username} started following you`;
+        return `@${notification.actorUsername} started following you`;
+      case 'UNFOLLOW':
+        return `@${notification.actorUsername} unfollowed you`;
       case 'NEW_POST':
-        return `${data.username} created a new post`;
+        return `@${notification.actorUsername} created a new post`;
       default:
         return 'New notification';
     }
   };
 
+  const getNotificationLink = (notification: Notification): string => {
+    if (notification.postId) {
+      return `/user/${notification.actorUsername}`;
+    }
+    return `/user/${notification.actorUsername}`;
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="border-x border-border min-h-screen">
         <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <h1 className="p-4 text-xl font-bold">Notifications</h1>
+          <div className="flex items-center justify-between p-4">
+            <h1 className="text-xl font-bold">Notifications</h1>
+            {notifications.some((n) => !n.isRead) && (
+              <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
+                Mark all as read
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="divide-y divide-border">
@@ -75,12 +124,25 @@ export default function Notifications() {
             </div>
           ) : (
             notifications.map((notification) => (
-              <div key={notification.id} className="p-4">
-                <p>{notification.message}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(notification.timestamp).toLocaleString()}
-                </p>
-              </div>
+              <Link
+                key={notification.id}
+                to={getNotificationLink(notification)}
+                className={`block p-4 hover:bg-muted/50 transition-colors ${
+                  !notification.isRead ? 'bg-primary/5' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">{getNotificationMessage(notification)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {!notification.isRead && (
+                    <div className="h-2 w-2 rounded-full bg-primary ml-2 mt-2" />
+                  )}
+                </div>
+              </Link>
             ))
           )}
         </div>

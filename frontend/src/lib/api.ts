@@ -95,6 +95,21 @@ export const likesAPI = {
     fetchWithAuth(`/likes/${postId}`, { method: 'DELETE' }),
 };
 
+// Notifications API
+export const notificationsAPI = {
+  getAll: () => fetchWithAuth('/notifications'),
+  
+  getUnread: () => fetchWithAuth('/notifications/unread'),
+  
+  getUnreadCount: () => fetchWithAuth('/notifications/unread/count'),
+  
+  markAsRead: (notificationId: string) =>
+    fetchWithAuth(`/notifications/${notificationId}/read`, { method: 'POST' }),
+  
+  markAllAsRead: () =>
+    fetchWithAuth('/notifications/read-all', { method: 'POST' }),
+};
+
 // SSE for real-time updates
 export function createSSEConnection(endpoint: string, onMessage: (data: any) => void) {
   const token = auth.currentUser?.getIdToken();
@@ -112,6 +127,15 @@ export function createSSEConnection(endpoint: string, onMessage: (data: any) => 
         console.error('Error parsing SSE message:', error);
       }
     };
+
+    eventSource.addEventListener('notification', (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        onMessage(data);
+      } catch (error) {
+        console.error('Error parsing notification SSE message:', error);
+      }
+    });
 
     eventSource.onerror = (error) => {
       console.error('SSE Error:', error);

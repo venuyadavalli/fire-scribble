@@ -23,13 +23,13 @@ public class FollowsController {
   @PostMapping("/{uid}")
   public ResponseEntity<Void> follow(@PathVariable String uid) {
     followsService.followUser(uid);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 
   @DeleteMapping("/{uid}")
   public ResponseEntity<Void> unfollow(@PathVariable String uid) {
     followsService.unfollowUser(uid);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/followers/{id}")

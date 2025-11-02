@@ -29,6 +29,9 @@ public class LikeService {
   @Autowired
   private CurrentUserService currentUser;
 
+  @Autowired
+  private NotificationService notificationService;
+
   public Like likePost(UUID postId) {
     User user = userRepository.findById(currentUser.getId()).orElseThrow();
     Post post = postRepository.findById(postId).orElseThrow();
@@ -36,13 +39,29 @@ public class LikeService {
       throw new RuntimeException("Already liked");
     }
     Like like = new Like(user, post);
-    return likeRepository.save(like);
+    Like saved = likeRepository.save(like);
+
+    // Create notification for the post author
+    notificationService.createNotification(
+        com.microblog.models.Notification.NotificationType.LIKE,
+        post.getAuthor(),
+        user,
+        post);
+
+    return saved;
   }
 
   public void unlikePost(UUID postId) {
     User user = userRepository.findById(currentUser.getId()).orElseThrow();
     Post post = postRepository.findById(postId).orElseThrow();
     likeRepository.deleteByUserAndPost(user, post);
+
+    // Create notification for the post author
+    notificationService.createNotification(
+        com.microblog.models.Notification.NotificationType.UNLIKE,
+        post.getAuthor(),
+        user,
+        post);
   }
 
   public List<Post> getLikedPostsByUsername(String username) {

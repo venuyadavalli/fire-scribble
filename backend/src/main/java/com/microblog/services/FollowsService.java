@@ -25,6 +25,9 @@ public class FollowsService {
   @Autowired
   private CurrentUserService currentUser;
 
+  @Autowired
+  private NotificationService notificationService;
+
   public void followUser(String targetUserId) {
     if (followsRepository.existsByFollower_IdAndFollowee_Id(currentUser.getId(), targetUserId)) {
       return;
@@ -33,10 +36,27 @@ public class FollowsService {
     User followee = userRepository.findById(targetUserId).orElseThrow();
     Follows follows = new Follows(follower, followee);
     followsRepository.save(follows);
+
+    // Create notification for the followed user
+    notificationService.createNotification(
+        com.microblog.models.Notification.NotificationType.FOLLOW,
+        followee,
+        follower,
+        null);
   }
 
   public void unfollowUser(String targetUserId) {
+    User follower = userRepository.findById(currentUser.getId()).orElseThrow();
+    User followee = userRepository.findById(targetUserId).orElseThrow();
+    
     followsRepository.deleteById(new FollowsId(currentUser.getId(), targetUserId));
+
+    // Create notification for the unfollowed user
+    notificationService.createNotification(
+        com.microblog.models.Notification.NotificationType.UNFOLLOW,
+        followee,
+        follower,
+        null);
   }
 
   public List<User> getFollowers(String targetUserId) {
