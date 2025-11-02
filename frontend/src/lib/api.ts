@@ -101,7 +101,10 @@ export const notificationsAPI = {
   
   getUnread: () => fetchWithAuth('/notifications/unread'),
   
-  getUnreadCount: () => fetchWithAuth('/notifications/unread/count'),
+  getUnreadCount: async (): Promise<number> => {
+    const response = await fetchWithAuth('/notifications/unread/count');
+    return response as number;
+  },
   
   markAsRead: (notificationId: string) =>
     fetchWithAuth(`/notifications/${notificationId}/read`, { method: 'POST' }),

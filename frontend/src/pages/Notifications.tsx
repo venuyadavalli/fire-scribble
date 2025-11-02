@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createSSEConnection, notificationsAPI } from '@/lib/api';
-import { toast } from 'sonner';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface Notification {
   id: string;
@@ -17,52 +16,19 @@ interface Notification {
 }
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { notifications, refreshNotifications, markAllAsRead } = useNotifications();
   const [loading, setLoading] = useState(true);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    loadNotifications();
-    connectSSE();
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+    const loadData = async () => {
+      await refreshNotifications();
+      setLoading(false);
     };
+    loadData();
   }, []);
 
-  const loadNotifications = async () => {
-    try {
-      const data = await notificationsAPI.getAll();
-      setNotifications(data);
-    } catch (error) {
-      toast.error('Failed to load notifications');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const connectSSE = async () => {
-    try {
-      const eventSource = await createSSEConnection('/notifications/stream', (data) => {
-        setNotifications((prev) => [data, ...prev]);
-        toast.info(getNotificationMessage(data));
-      });
-      eventSourceRef.current = eventSource;
-    } catch (error) {
-      console.error('Failed to connect to notifications SSE:', error);
-    }
-  };
-
   const handleMarkAllAsRead = async () => {
-    try {
-      await notificationsAPI.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      toast.success('All notifications marked as read');
-    } catch (error) {
-      toast.error('Failed to mark notifications as read');
-    }
+    await markAllAsRead();
   };
 
   const getNotificationMessage = (notification: Notification): string => {

@@ -1,7 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Search, Bell, User, PenSquare, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 
@@ -9,6 +11,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { userInfo } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -44,15 +47,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const isNotifications = item.path === '/notifications';
               
               return (
                 <Link key={item.path} to={item.path}>
                   <Button
                     variant={isActive ? 'default' : 'ghost'}
-                    className="w-full justify-center lg:justify-start"
+                    className="relative w-full justify-center lg:justify-start"
                   >
                     <Icon className="h-5 w-5" />
                     <span className="ml-3 hidden lg:inline">{item.label}</span>
+                    {isNotifications && unreadCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs lg:right-2"
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
               );
