@@ -52,8 +52,9 @@ export default function Profile() {
   };
 
   const handleFollowToggle = async () => {
+    console.log("handleFollowToggle: invoked")
     if (!profile) return;
-
+    
     try {
       if (profile.isFollowed) {
         await followsAPI.unfollowUser(profile.id);
@@ -65,6 +66,8 @@ export default function Profile() {
         toast.success('Following');
       }
     } catch (error) {
+      console.log("handleFollowToggle: error")
+      console.error(error);
       toast.error('Failed to update follow status');
     }
   };
