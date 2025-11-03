@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { usersAPI, followsAPI } from '@/lib/api';
+import { debounce } from '@/lib/debounce';
 import { toast } from 'sonner';
 
 interface UserResult {
@@ -15,23 +16,40 @@ interface UserResult {
 }
 
 export default function Search() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserResult[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setResults([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const users = await usersAPI.searchUsers(searchQuery);
+        setResults(users);
+      } catch (error) {
+        toast.error('Failed to search users');
+      } finally {
+        setLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(query);
+  }, [query, debouncedSearch]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-
-    setLoading(true);
-    try {
-      const users = await usersAPI.searchUsers(query);
-      setResults(users);
-    } catch (error) {
-      toast.error('Failed to search users');
-    } finally {
-      setLoading(false);
-    }
+    debouncedSearch(query);
   };
 
   const handleFollowToggle = async (userId: string, isFollowed: boolean) => {
@@ -87,19 +105,26 @@ export default function Search() {
           )}
 
           {results.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4">
-              <Link to={`/user/${user.username}`} className="flex items-center space-x-3 flex-1">
+            <div 
+              key={user.id} 
+              className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+              onClick={() => navigate(`/user/${user.username}`)}
+            >
+              <div className="flex items-center space-x-3 flex-1">
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {user.username[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="font-medium">@{user.username}</span>
-              </Link>
+              </div>
               <Button
                 size="sm"
                 variant={user.isFollowed ? 'outline' : 'default'}
-                onClick={() => handleFollowToggle(user.id, user.isFollowed || false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFollowToggle(user.id, user.isFollowed || false);
+                }}
               >
                 {user.isFollowed ? 'Unfollow' : 'Follow'}
               </Button>

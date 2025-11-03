@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, Bell, User, PenSquare, LogOut } from 'lucide-react';
+import { Home, Search, Bell, User, PenSquare, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 
@@ -12,6 +13,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { userInfo } = useAuth();
   const { unreadCount } = useNotifications();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -71,14 +73,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-center text-destructive hover:bg-destructive/10 hover:text-destructive lg:justify-start"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="ml-3 hidden lg:inline">Logout</span>
-          </Button>
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              onClick={toggleTheme}
+              className="w-full justify-center lg:justify-start"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+              <span className="ml-3 hidden lg:inline">
+                {theme === 'dark' ? 'Light' : 'Dark'} Mode
+              </span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-center text-destructive hover:bg-destructive/10 hover:text-destructive lg:justify-start"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="ml-3 hidden lg:inline">Logout</span>
+            </Button>
+          </div>
         </div>
       </aside>
 

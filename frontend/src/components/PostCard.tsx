@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Trash2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -24,6 +24,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
+  const navigate = useNavigate();
   const { userInfo } = useAuth();
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likedCount);
@@ -98,7 +99,7 @@ export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
       <CardContent>
         <p className="whitespace-pre-wrap">{post.content}</p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="gap-2">
         <Button
           variant="ghost"
           size="sm"
@@ -108,6 +109,16 @@ export function PostCard({ post, onDelete, onLikeToggle }: PostCardProps) {
         >
           <Heart className={`mr-2 h-4 w-4 ${liked ? 'fill-current' : ''}`} />
           {likeCount}
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/post/${post.id}`)}
+          className="hover:text-primary"
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          View
         </Button>
       </CardFooter>
     </Card>

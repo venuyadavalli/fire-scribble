@@ -5,7 +5,7 @@ import { PostCard } from '@/components/PostCard';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usersAPI, postsAPI, followsAPI } from '@/lib/api';
+import { usersAPI, postsAPI, followsAPI, likesAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ export default function Profile() {
   const { userInfo } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
+  const [likedPosts, setLikedPosts] = useState<any[]>([]);
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,13 +29,15 @@ export default function Profile() {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const [profileData, postsData] = await Promise.all([
+      const [profileData, postsData, likedPostsData] = await Promise.all([
         usersAPI.getProfile(effectiveUsername),
         postsAPI.getUserPosts(effectiveUsername),
+        likesAPI.getLikedPostsByUser(effectiveUsername),
       ]);
 
       setProfile(profileData);
       setPosts(postsData);
+      setLikedPosts(likedPostsData);
 
       if (profileData.id) {
         const [followersData, followingData] = await Promise.all([
@@ -138,8 +141,9 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border">
+          <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-border">
             <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="liked">Liked</TabsTrigger>
             <TabsTrigger value="followers">Followers</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
@@ -154,6 +158,22 @@ export default function Profile() {
                 posts.map((post) => (
                   <div key={post.id} className="p-4">
                     <PostCard post={post} onDelete={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))} />
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="liked" className="mt-0">
+            <div className="divide-y divide-border">
+              {likedPosts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <p className="text-muted-foreground">No liked posts yet</p>
+                </div>
+              ) : (
+                likedPosts.map((post) => (
+                  <div key={post.id} className="p-4">
+                    <PostCard post={post} onDelete={(id) => setLikedPosts((prev) => prev.filter((p) => p.id !== id))} />
                   </div>
                 ))
               )}

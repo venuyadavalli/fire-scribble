@@ -93,6 +93,12 @@ export const likesAPI = {
   
   unlikePost: (postId: string) =>
     fetchWithAuth(`/likes/${postId}`, { method: 'DELETE' }),
+  
+  getLikedPostsByUser: (username: string) => 
+    fetchWithAuth(`/likes/user/${username}`),
+  
+  getUsersWhoLikedPost: (postId: string) =>
+    fetchWithAuth(`/likes/${postId}`),
 };
 
 // Notifications API
